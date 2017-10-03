@@ -43,7 +43,7 @@ class LinearRegression(object):
         - num_iters: (integer) number of steps to take when optimizing
         - batch_size: (integer) number of training examples to use at each step.
         - verbose: (boolean) If true, print progress during optimization.
-
+        
         Outputs:
         If analytic_solution is set to True this function returns None.
         Otherwise,
@@ -95,8 +95,7 @@ class LinearRegression(object):
             # using stochastic gradient descent. You'll need to use the gradients   #
             # stored in the grads dictionary defined above.                         #
             #########################################################################
-
-            self.params['W'] -= learning_rate * grads['W']
+            self.params['W'] = self.params['W'] - learning_rate * grads['W']
             #########################################################################
             #                             END OF YOUR CODE                          #
             #########################################################################
@@ -136,7 +135,7 @@ class LinearRegression(object):
         #############################################################################
         # TODO: Compute for the loss.                                               #
         #############################################################################
-        loss = np.sum(np.square(prediction - y) / (2 * N))
+        loss = np.sum((np.square(prediction - y)) / (2 * N))
         
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -150,7 +149,7 @@ class LinearRegression(object):
         #############################################################################
         
         
-        grads['W'] = np.transpose(np.dot(np.transpose(prediction - y), X))
+        grads['W'] = (np.dot(np.transpose(X), prediction - y)) / N
         
         #############################################################################
         #                              END OF YOUR CODE                             #
