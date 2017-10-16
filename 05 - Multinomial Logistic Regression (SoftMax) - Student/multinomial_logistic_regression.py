@@ -22,8 +22,8 @@ class MultinomialLogisticRegression(object):
         #############################################################################
         # TODO: Initialize the weight and bias.                                     #
         #############################################################################
-        self.params['W'] = None
-        self.params['b'] = None
+        self.params['W'] = np.random.randn(input_dim, num_classes) * std_dev
+        self.params['b'] = np.zeros(num_classes)
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################        
@@ -56,8 +56,9 @@ class MultinomialLogisticRegression(object):
             # TODO: Create a random minibatch of training data and labels, storing  #
             # them in X_batch and y_batch respectively.                             #
             #########################################################################
-            X_batch = None
-            y_batch = None
+            indices = np.random.choice(num_train,batch_size)
+            X_batch = X[indices,:]
+            y_batch = y[indices]
             #########################################################################
             #                             END OF YOUR CODE                          #
             #########################################################################
@@ -86,15 +87,15 @@ class MultinomialLogisticRegression(object):
 
     def softmax(self,x):
         
-        probs = None
+        probs = np.exp(x)
 
         return probs.T
 
 
-    def cross_entropy(self,probs, labels):
+    def cross_entropy(self,probs,labels):
         N = probs.shape[0]
         
-        ce = None
+        ce = -np.sum(np.multiply(labels, np.log(probs))) / N
         
         return ce
         
@@ -102,15 +103,15 @@ class MultinomialLogisticRegression(object):
 
     def softmax_cross_entropy_loss(self,x,labels):
         N = x.shape[0]
-        probs = None # turn scores into probs
-        loss = None
+        probs = self.softmax(x)
+        loss = self.cross_entropy(probs, labels)
 
         dloss = probs.copy()
         #########################################################################
         # TODO: Calculate for the gradients of the loss                         #
         #########################################################################
         
-        dloss = None
+        dloss = np.multiply(dloss-1, x)
         
         #########################################################################
         #                             END OF YOUR CODE                          #
@@ -147,7 +148,7 @@ class MultinomialLogisticRegression(object):
         # Store the result in the scores variable, which should be an array of      #
         # shape (N, C).                                                             #
         #############################################################################
-        score = None
+        score = X.dot(W) + b
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -162,7 +163,7 @@ class MultinomialLogisticRegression(object):
         # regularization loss by 0.5                                                #
         #############################################################################
         softmax_ce_loss, dloss = self.softmax_cross_entropy_loss(score,y)
-        loss = None
+        loss = softmax_ce_loss + ((reg/2)* np.sum(np.square(W)))
         
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -200,8 +201,8 @@ class MultinomialLogisticRegression(object):
         - prediction: A sorted numpy array of shape (num_test,num_classes) containing the probabilities for X[i] belonging to each of the classes
         """
         W, b = self.params['W'], self.params['b']
-        scores = None
-        probs = None
+        scores = X.dot(W) + b
+        probs = self.softmax(x)
         prediction = None
 
         return prediction
