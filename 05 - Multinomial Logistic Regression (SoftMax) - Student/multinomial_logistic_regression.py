@@ -75,8 +75,8 @@ class MultinomialLogisticRegression(object):
             # stored in the grads dictionary defined above.                         #
             #########################################################################
 
-            self.params['W'] = None
-            self.params['b'] = None
+            self.params['W'] = self.params['W'] + learning_rate * grads['W']
+            self.params['b'] = self.params['b'] + learning_rate * grads['b']
             #########################################################################
             #                             END OF YOUR CODE                          #
             #########################################################################
@@ -111,7 +111,7 @@ class MultinomialLogisticRegression(object):
         # TODO: Calculate for the gradients of the loss                         #
         #########################################################################
         
-        dloss = np.multiply(dloss-1, x)
+        dloss = np.multiply(dloss-1, x.T)
         
         #########################################################################
         #                             END OF YOUR CODE                          #
@@ -180,8 +180,8 @@ class MultinomialLogisticRegression(object):
 
         db = None
         
-        grads['W'] = dW
-        grads['b'] = db
+        grads['W'] = np.dot(np.transpose(X), dloss.T) / N + reg * W
+        grads['b'] = np.mean(dloss)
         
         #############################################################################
         #                              END OF YOUR CODE                             #
