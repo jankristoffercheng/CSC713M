@@ -87,15 +87,14 @@ class MultinomialLogisticRegression(object):
 
     def softmax(self,x):
         
-        probs = np.exp(x)
-
+        divisor = np.sum(np.exp(x), axis=1, keepdims=True)
+        probs = np.divide(np.exp(x), divisor)
         return probs.T
 
 
     def cross_entropy(self,probs,labels):
         N = probs.shape[0]
-        
-        ce = -np.sum(np.multiply(labels, np.log(probs))) / N
+        ce = -np.sum(np.dot(np.transpose(np.reshape(labels, (-1,1))), np.transpose(np.log(probs)))) / N
         
         return ce
         
@@ -103,16 +102,17 @@ class MultinomialLogisticRegression(object):
 
     def softmax_cross_entropy_loss(self,x,labels):
         N = x.shape[0]
-        probs = self.softmax(x)
+        W, b = self.params['W'], self.params['b']
+        score = x.dot(W) + b
+        probs = self.softmax(score)
         loss = self.cross_entropy(probs, labels)
-
+        
         dloss = probs.copy()
         #########################################################################
         # TODO: Calculate for the gradients of the loss                         #
         #########################################################################
-        
-        dloss = np.multiply(dloss-1, x.T)
-        
+
+        dloss = np.multiply(np.transpose(probs-1), score)
         #########################################################################
         #                             END OF YOUR CODE                          #
         #########################################################################
@@ -162,9 +162,10 @@ class MultinomialLogisticRegression(object):
         # classifier loss. So that your results match ours, multiply the            #
         # regularization loss by 0.5                                                #
         #############################################################################
-        softmax_ce_loss, dloss = self.softmax_cross_entropy_loss(score,y)
+        softmax_ce_loss, dloss = self.softmax_cross_entropy_loss(X,y)
         loss = softmax_ce_loss + ((reg/2)* np.sum(np.square(W)))
-        
+        print(loss)
+        print(((reg/2)* np.sum(np.square(W))))
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -179,8 +180,7 @@ class MultinomialLogisticRegression(object):
         dW = None
 
         db = None
-        
-        grads['W'] = np.dot(np.transpose(X), dloss.T) / N + reg * W
+        grads['W'] = np.dot(np.transpose(X), dloss) / N + reg * W
         grads['b'] = np.mean(dloss)
         
         #############################################################################
