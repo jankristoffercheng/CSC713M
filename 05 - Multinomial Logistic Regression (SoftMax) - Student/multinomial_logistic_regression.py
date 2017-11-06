@@ -93,8 +93,12 @@ class MultinomialLogisticRegression(object):
 
 
     def cross_entropy(self,probs,labels):
-        N = probs.shape[0]
-        ce = -np.sum(np.dot(np.transpose(np.reshape(labels, (-1,1))), np.transpose(np.log(probs)))) / N
+        N = probs.shape[1]
+        array = np.zeros((probs.shape[0], probs.shape[1]))
+        indices = np.arange(probs.shape[1])
+        array[labels, indices] = 1
+        ce = -np.sum(np.multiply(array, np.log(probs))) / N
+        #ce = -np.sum(np.dot(np.transpose(np.reshape(labels, (-1,1))), np.transpose(np.log(probs)))) / N
         
         return ce
         
@@ -111,8 +115,11 @@ class MultinomialLogisticRegression(object):
         #########################################################################
         # TODO: Calculate for the gradients of the loss                         #
         #########################################################################
-
-        dloss = np.multiply(np.transpose(probs-1), score)
+        array = np.zeros((probs.shape[0], probs.shape[1]))
+        indices = np.arange(probs.shape[1])
+        array[labels, indices] = 1
+        dloss = np.dot(probs-array, x)
+        #dloss = np.multiply(np.transpose(probs-1), score)
         #########################################################################
         #                             END OF YOUR CODE                          #
         #########################################################################
@@ -164,8 +171,7 @@ class MultinomialLogisticRegression(object):
         #############################################################################
         softmax_ce_loss, dloss = self.softmax_cross_entropy_loss(X,y)
         loss = softmax_ce_loss + ((reg/2)* np.sum(np.square(W)))
-        print(loss)
-        print(((reg/2)* np.sum(np.square(W))))
+        print('loss', loss)
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -180,7 +186,7 @@ class MultinomialLogisticRegression(object):
         dW = None
 
         db = None
-        grads['W'] = np.dot(np.transpose(X), dloss) / N + reg * W
+        grads['W'] = np.transpose(dloss) / N + reg * W
         grads['b'] = np.mean(dloss)
         
         #############################################################################
