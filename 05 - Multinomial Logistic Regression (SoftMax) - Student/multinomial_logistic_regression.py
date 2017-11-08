@@ -10,8 +10,9 @@ class MultinomialLogisticRegression(object):
         to small random values. Weights are stored in the variable dictionary
         named self.params.
 
-        W: weight vector; has shape (D, C)
-        b: bias vector; has shape (C,)
+        W: weight vector; has shape (D, C) because each class will have its own set of weights
+        b: bias vector; has shape (C,) 
+        where C is the number of classes
         
         Inputs:
         - input_dim: (int) The dimension D of the input data.
@@ -21,8 +22,11 @@ class MultinomialLogisticRegression(object):
         self.params = {}
         #############################################################################
         # TODO: Initialize the weight and bias.                                     #
+        # Check the comment above to know the expected shape of the weights and bias#
+        # The weight vector are initialized small random values, while bias gets 0s #
         #############################################################################
         self.params['W'] = np.random.randn(input_dim, num_classes) * std_dev
+        #self.params['b'] = np.random.randn(num_classes) - was suggested
         self.params['b'] = np.zeros(num_classes)
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -32,7 +36,7 @@ class MultinomialLogisticRegression(object):
     def train(self, X, y, learning_rate=1e-3, reg=1e-5, num_iters=100,
             batch_size=200, verbose=False):
         """
-        Train Linear Regression using stochastic gradient descent.
+        Train logistic regression using stochastic gradient descent.
 
         Inputs:
         - X: A numpy array of shape (N, D) containing training data; there are N
@@ -55,6 +59,8 @@ class MultinomialLogisticRegression(object):
             #########################################################################
             # TODO: Create a random minibatch of training data and labels, storing  #
             # them in X_batch and y_batch respectively.                             #
+            # Search up np.random.choice                                            #
+            # and numpy array indexing:  https://docs.scipy.org/doc/numpy-1.13.0/user/basics.indexing.html#indexing-multi-dimensional-arrays #
             #########################################################################
             indices = np.random.choice(num_train,batch_size)
             X_batch = X[indices,:]
@@ -86,40 +92,107 @@ class MultinomialLogisticRegression(object):
         return loss_history
 
     def softmax(self,x):
+        '''
+        Implement the softmax activation function.
         
-        divisor = np.sum(np.exp(x), axis=1, keepdims=True)
-        probs = np.divide(np.exp(x), divisor)
-        return probs.T
+        Inputs: 
+        - x: a numpy array of shape (N,C) denoting the scores of the hypotheses of 
+          the classes
+        
+        Outputs:
+        - probs: a numpy array of shape (N, C) containing the probabilities given 
+          the scores of each X[i]
+          
+        Hint: 
+        Any np.exp(a) with a large enough a will yield an incredibly large value
+        Thankfully, softmax is constant invariant as long as the constant c is added to
+        all the scores of that X[i]. 
+
+        Refer to the proof here: 
+        https://www.quora.com/Why-is-softmax-invariant-to-constant-offsets-to-the-input
+        
+        '''
+        max = np.reshape(np.amax(x, axis=1), (-1, 1))
+        divisor = np.sum(np.exp(x-max), axis=1, keepdims=True)
+        probs = np.exp(x-max) / divisor
+        return probs
 
 
-    def cross_entropy(self,probs,labels):
-        N = probs.shape[1]
-        array = np.zeros((probs.shape[0], probs.shape[1]))
-        indices = np.arange(probs.shape[1])
-        array[labels, indices] = 1
+    def cross_entropy(self,probs, labels):
+        '''
+        Cross entropy for C outcomes. (Can be thought of as a measure of misclassification)
+
+        Inputs:
+        - probs: a numpy array of shape (N,C) showing the probabilities of an X[i]
+          belonging to any of the C classes; this is the output of self.softmax
+        - labels: a numpy array of shape (N,) containing the actual labels (y) of each X[i] 
+
+        Outputs:
+        The data loss given the hypotheses (before regularization)
+        '''
+        
+        N = probs.shape[0]
+        
+        #own version for array
+        #array = np.zeros((probs.shape[0], probs.shape[1]))
+        #indices = np.arange(probs.shape[0])
+        #array[indices,labels] = 1
+        
+        array = np.eye(probs.shape[1])
+        array = array[labels]
         ce = -np.sum(np.multiply(array, np.log(probs))) / N
-        #ce = -np.sum(np.dot(np.transpose(np.reshape(labels, (-1,1))), np.transpose(np.log(probs)))) / N
-        
         return ce
         
 
 
     def softmax_cross_entropy_loss(self,x,labels):
-        N = x.shape[0]
-        W, b = self.params['W'], self.params['b']
-        score = x.dot(W) + b
-        probs = self.softmax(score)
-        loss = self.cross_entropy(probs, labels)
+        '''
+        This is a special function designed to compute the loss (loss), and calculate the 
+        gradient the loss (dloss). As the gradient computation also need the individual 
+        prob of the actual class (y), both the loss and dloss are computed here with the
+        output of self.softmax. 
         
+        Note: We can calculate for the gradient separately by calling self.softmax again,
+        but note how that will double our computation for the probs (softmax)
+
+        Inputs:
+        - x: a numpy array of shape (N,C) denoting the scores of the hypotheses of 
+          the classes
+        - labels: a numpy array of shape (N,) containing the actual labels (y) of each X[i] 
+
+        Hint: the gradient of the loss only affects probs belonging to the actual label.
+        There are two ways how you could get the probs of the actual label:
+        #1 Create a (N,C) matrix, where in each row, the actual class will get a 1 and the
+           rest will get 0 (hint^2: np.eye can accept an array of which indices the ones 
+           will be placed
+        #2 A matrix indices can be separated per dimension: following the style of
+           matrix[dim_indx_1, dim_indx_2]
+           See : http://cs231n.github.io/python-numpy-tutorial/#numpy-array-indexing
+           In this case, dim_indx_1 could be an array going through 1..N, and dim_indx_1 
+           refer to the columns (label/class) you just need
+
+        Outputs:
+        The data loss given the hypotheses (before regularization)
+        '''
+        
+        N = x.shape[0]
+        probs = self.softmax(x) # turn scores into probs
+        loss = self.cross_entropy(probs, labels)
+
         dloss = probs.copy()
         #########################################################################
         # TODO: Calculate for the gradients of the loss                         #
         #########################################################################
-        array = np.zeros((probs.shape[0], probs.shape[1]))
-        indices = np.arange(probs.shape[1])
-        array[labels, indices] = 1
-        dloss = np.dot(probs-array, x)
-        #dloss = np.multiply(np.transpose(probs-1), score)
+        
+        #own version for array
+        #array = np.zeros((probs.shape[0], probs.shape[1]))
+        #indices = np.arange(probs.shape[0])
+        #array[indices,labels] = 1
+        
+        array = np.eye(probs.shape[1])
+        array = array[labels]
+        dloss = array-np.multiply(probs, array)
+        
         #########################################################################
         #                             END OF YOUR CODE                          #
         #########################################################################
@@ -169,9 +242,9 @@ class MultinomialLogisticRegression(object):
         # classifier loss. So that your results match ours, multiply the            #
         # regularization loss by 0.5                                                #
         #############################################################################
-        softmax_ce_loss, dloss = self.softmax_cross_entropy_loss(X,y)
+        softmax_ce_loss, dloss = self.softmax_cross_entropy_loss(score,y)
         loss = softmax_ce_loss + ((reg/2)* np.sum(np.square(W)))
-        print('loss', loss)
+        
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -183,11 +256,12 @@ class MultinomialLogisticRegression(object):
         # results in the grads dictionary. For example, grads['W'] should store     #
         # the gradient on W, and be a matrix of same size.                          #
         #############################################################################
-        dW = None
+        dW = np.dot(np.transpose(X), dloss) / N + reg * W
 
-        db = None
-        grads['W'] = np.transpose(dloss) / N + reg * W
-        grads['b'] = np.mean(dloss)
+        db = np.mean(dloss, axis=0)
+        
+        grads['W'] = dW
+        grads['b'] = db
         
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -208,8 +282,8 @@ class MultinomialLogisticRegression(object):
         """
         W, b = self.params['W'], self.params['b']
         scores = X.dot(W) + b
-        probs = self.softmax(x)
-        prediction = None
-
+        probs = self.softmax(scores)
+        prediction = np.argmax(probs, axis=1) # Remember to get the most probable class as the label
+        
         return prediction
 
