@@ -17,7 +17,8 @@ class NaiveBayes(object):
                 ###########################################################################
                 # TODO: Calculate for theta using MLE for multinomial                     #
                 ###########################################################################
-                self.prob_x_given_y[:,c] = None
+                indices = [i for i, j in enumerate(y) if j == c]
+                self.prob_x_given_y[:,c] = (np.sum(X[indices],axis=0)+1) / (np.sum(X[indices])+D)
                 ###########################################################################
                 #                              END OF YOUR CODE                           #  
                 ###########################################################################
@@ -29,8 +30,9 @@ class NaiveBayes(object):
                 ###########################################################################
                 # TODO: Calculate for mean and variance using MLE for Gaussian            #
                 ###########################################################################
-                self.mu[:,c] = None
-                self.sigma[:,c] = None
+                indices = [i for i, j in enumerate(y) if j == c]
+                self.mu[:,c] = np.mean(X[indices,:], axis=0)
+                self.sigma[:,c] = np.var(X[indices,:], axis=0)
 
                 ###########################################################################
                 #                              END OF YOUR CODE                           #  
@@ -52,11 +54,11 @@ class NaiveBayes(object):
         # TODO: calculate for the prior per class                                   #
         #       prior per class is just the counts of per class / total             #
         ############################################################################# 
-        prior = None
+        prior = []
 
         for c in range(len(self.classes)):
             # implement
-
+            prior.append(len([i for i, j in enumerate(y) if j == c])/num_examples)
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -64,7 +66,7 @@ class NaiveBayes(object):
         return prior
 
 
-    def compute_gaussian_probabilitiy(self, X, mean, var):
+    def compute_gaussian_probability(self, X, mean, var):
         coeff = 1.0 / np.sqrt((2.0 * np.pi) * var)
         exponent = np.exp(-0.5*(np.expand_dims(X,-1) - mean)**2 / var)
 
@@ -76,7 +78,7 @@ class NaiveBayes(object):
             #############################################################################
             # TODO: Calculate the log likelihood for multinomial distributions          #
             ############################################################################# 
-            return None
+            return np.dot(X,np.log(self.prob_x_given_y))
             #############################################################################
             #                              END OF YOUR CODE                             #
             #############################################################################
@@ -84,7 +86,11 @@ class NaiveBayes(object):
             #############################################################################
             # TODO: Calculate the log likelihood for Gaussian distributions             #
             ############################################################################# 
-            return None
+            loli = np.sum(np.log(self.compute_gaussian_probability(X, self.mu, self.sigma)),axis=1)
+            #same shit pero prod: loli = -np.log(np.prod(self.compute_gaussian_probability(X, self.mu, self.sigma),axis=1))
+            
+            
+            return loli
             #############################################################################
             #                              END OF YOUR CODE                             #
             #############################################################################
@@ -100,8 +106,10 @@ class NaiveBayes(object):
         prediction : An array of shape (len(X),) containing the class index with the highest 
                      posterior probability (array of shape (len(X),))
         '''
-        posterior = None
-        prediction = None
+        posterior = self.compute_log_likelihood(X[:]) + np.log(self.prior)
+        print(self.prior)
+        prediction = np.argmax(posterior,axis=1)
+        print(prediction.shape)
 
         return prediction
 
