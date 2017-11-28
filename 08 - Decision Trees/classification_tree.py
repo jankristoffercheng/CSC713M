@@ -23,7 +23,8 @@ class ClassificationTree(DecisionTree):
         #########################################################################
         # TODO: Implement Shannon's entropy                                     #
         #########################################################################
-        entropy = y.shape[0] * np.sum(np.bincount(y) / y.shape[0] * np.log(np.bincount(y) / y.shape[0]))
+        unique, counts = np.unique(y, return_counts = True)
+        entropy = y.shape[0] * -np.sum(counts / y.shape[0] * np.log(counts / y.shape[0]) / np.log(2))
         #########################################################################
         #                              END OF YOUR CODE                         #
         ######################################################################### 
@@ -69,7 +70,7 @@ class ClassificationTree(DecisionTree):
         #########################################################################
         # TODO: Implement Gini Gain                                             #
         #########################################################################
-        gain = None
+        gain = self.gini_impurity(y_S) - self.gini_impurity(y_A) - self.gini_impurity(y_B)
         #########################################################################
         #                              END OF YOUR CODE                         #
         ######################################################################### 
@@ -92,7 +93,8 @@ class ClassificationTree(DecisionTree):
         #########################################################################
         # TODO: Implement Gini impurity                                         #
         #########################################################################
-        gini = None
+        unique, counts = np.unique(y, return_counts = True)
+        gini = y.shape[0] * (1 - np.sum(counts / y.shape[0])**2)
 
         #########################################################################
         #                              END OF YOUR CODE                         #
@@ -116,7 +118,7 @@ class ClassificationTree(DecisionTree):
         #########################################################################
         # TODO: Compute for the resulting value of the leaf node                #
         #########################################################################
-        leaf_value = y[np.argmax(np.bincount(y))]
+        leaf_value = np.argmax(np.bincount(y))
         #########################################################################
         #                              END OF YOUR CODE                         #
         ######################################################################### 

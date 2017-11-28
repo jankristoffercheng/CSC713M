@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from regression_tree import RegressionTree
 
 class TreeNode():
     def __init__(self, node_type="Leaf", feature=None, threshold=None,
@@ -64,10 +65,13 @@ class DecisionTree(object):
         #########################################################################
         # TODO: Build the tree recursively.                                     #
         #########################################################################
-        if(np.unique(y).shape[0] == 1):
-            return TreeNode(self, value=self.compute_leaf(y))
+        
+        if(np.unique(y).shape[0] == 1 or N <= self.min_samples_split or self.max_depth == depth):
+            return TreeNode(value=self.compute_leaf(y))
         else:
             max_impurity, best_feature, best_threshold, split_idx = self.choose_best_feature_split(X,y)
+            if(max_impurity < self.min_impurity):
+                return TreeNode(value=self.compute_leaf(y))
             left_branch = self.create_tree(X[split_idx['left_idx']], y[split_idx['left_idx']], depth+1)
             right_branch = self.create_tree(X[split_idx['right_idx']], y[split_idx['right_idx']], depth+1)
             return TreeNode(node_type="Decision", feature=best_feature, threshold=best_threshold, left_branch=left_branch, right_branch=right_branch)
@@ -107,18 +111,25 @@ class DecisionTree(object):
         # TODO: Choose the best feature to split on.                            #
         #########################################################################
         for i in range(D):
-            unique = np.unique(X[i])
+            unique = np.unique(X[:,i])
             for j in range(unique.shape[0]):
+                
                 if(self.is_bool_feature[i]):
-                    left_idx = [X[:,i] == j]
-                    right_idx = [X[:,i] != j]
+                    left_idx = [X[:,i] == unique[j]][0]
+                    right_idx = [X[:,i] != unique[j]][0]
                 else:
-                    left_idx = [X[:,i] < j]
-                    right_idx = [X[:,i] >= j]
-                gain = self.information_gain(X[:,i], X[left_idx,i], X[right_idx,i])
+                    left_idx = [X[:,i] < unique[j]][0]
+                    right_idx = [X[:,i] >= unique[j]][0]
+                    
+                if self.__class__.__name__ == 'RegressionTree':
+                    gain = self.compute_impurity(X[:,i], X[left_idx,i], X[right_idx,i])
+                    #gain = self.compute_impurity(y, y[left_idx], y[right_idx])
+                else:
+                    gain = self.information_gain(y, y[left_idx], y[right_idx])
+                    
                 if(best_feature == None or gain > max_impurity):
                     best_feature = i
-                    best_threshold = j
+                    best_threshold = unique[j]
                     max_impurity = gain
                     split_idx['left_idx'] = left_idx
                     split_idx['right_idx'] = right_idx
@@ -146,7 +157,7 @@ class DecisionTree(object):
         #########################################################################
         if node.node_type == "Leaf":
             return node.value
-
+        
         X_feature_val = X[node.feature]
         
         if self.is_bool_feature[node.feature]:

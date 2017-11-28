@@ -23,7 +23,18 @@ class RegressionTree(DecisionTree):
         #########################################################################
         # TODO: Compute for the reduction in variance of the particular split.  #
         #########################################################################
-        var_reduction = None
+        
+        if(y_A.shape[0] == 0):
+            var_A = 0
+        else:
+            var_A = np.var(y_A)
+            
+        if(y_B.shape[0] == 0):
+            var_B = 0
+        else:
+            var_B = np.var(y_B)
+        
+        var_reduction = np.var(y_S) - var_A - var_B
 
         #########################################################################
         #                              END OF YOUR CODE                         #
@@ -47,7 +58,7 @@ class RegressionTree(DecisionTree):
         #########################################################################
         # TODO: Compute for the resulting value of the leaf node                #
         #########################################################################
-        leaf_value = None
+        leaf_value = np.mean(y)
         #########################################################################
         #                              END OF YOUR CODE                         #
         ######################################################################### 

@@ -28,10 +28,10 @@ class NeuralNetwork(object):
         # TODO: Initialize the weight and bias.                                     #
         #       See comment abovet to know the initialization                       #
         #############################################################################
-        self.params['W1'] = None
-        self.params['b1'] = None
-        self.params['W2'] = None
-        self.params['b2'] = None
+        self.params['W1'] = np.random.randn(input_dim, hidden_size) * std_dev
+        self.params['b1'] = np.zeros(hidden_size)
+        self.params['W2'] = np.random.randn(hidden_size, num_classes) * std_dev
+        self.params['b2'] = np.zeros(num_classes)
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################        
@@ -89,7 +89,10 @@ class NeuralNetwork(object):
                 # Note : you now have to update the weights and the bias in the 1st layer #
                 #                           and the weights and the bias in the 2nd layer # 
                 ###########################################################################
-                pass
+                self.params['W1'] = self.params['W1'] - learning_rate * grads['W1']
+                self.params['b1'] = self.params['b1'] - learning_rate * grads['b1']
+                self.params['W2'] = self.params['W2'] - learning_rate * grads['W2']
+                self.params['b2'] = self.params['b2'] - learning_rate * grads['b2']
                 ###########################################################################
                 #                              END OF YOUR CODE                           #
                 ###########################################################################        
@@ -179,7 +182,9 @@ class NeuralNetwork(object):
         Probability of belonging to each class
         """
 
-        probs =  None
+        max = np.reshape(np.amax(x, axis=1), (-1, 1))
+        divisor = np.sum(np.exp(x-max), axis=1, keepdims=True)
+        probs = np.exp(x-max) / divisor
         return probs
 
 
@@ -193,7 +198,11 @@ class NeuralNetwork(object):
         Outputs:
         Cross entropy loss
         """
-        cross_entropy = None
+        N = probs.shape[0]
+        
+        array = np.eye(probs.shape[1])
+        array = array[labels]
+        cross_entropy = -np.sum(np.multiply(array, np.log(probs+1e-8))) / N
         return cross_entropy
 
 
@@ -209,7 +218,14 @@ class NeuralNetwork(object):
         - loss : (float) Softmax cross entropy loss
         - dloss : the gradient of the loss with respect to the input x
         """
+        N = x.shape[0]
+        probs = self.softmax(x)
+        loss = self.cross_entropy(probs, labels)
 
+        dloss = probs.copy()
+        array = np.eye(probs.shape[1])
+        array = array[labels]
+        dloss = (probs-array)/N
         return loss, dloss
 
     def sigmoid(self,x):
@@ -252,15 +268,17 @@ class NeuralNetwork(object):
         # Store the result in the scores variable, which should be an array of      #
         # shape (N, C).                                                             #
         #############################################################################
-
+        
+        c = np.dot(X,W1) + b1
         if self.hidden_activation_fn == "relu":
-            pass
+            zero = np.zeros_like(c)
+            c = np.maximum(0,c)
         elif self.hidden_activation_fn == "sigmoid":
-            pass
+            c = self.sigmoid(c)
         elif self.hidden_activation_fn == "tanh":
-            pass
+            c = self.tanh(c)
 
-        scores = None
+        scores = np.dot(c,W2) + b2
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
@@ -277,12 +295,12 @@ class NeuralNetwork(object):
         # in the variable loss, which should be a scalar. Finish the implementations#
         # of the softmax, cross_entropy, and softmax_cross_entropy_loss.            #
         #############################################################################
-        loss = None
+        loss, dloss = self.softmax_cross_entropy_loss(scores,y)
         
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
-
+        
         # Backward pass: compute gradients
         grads = {}
         #############################################################################
@@ -292,16 +310,19 @@ class NeuralNetwork(object):
         #############################################################################
         
         if self.hidden_activation_fn == "relu":
-            pass
+            c2 = np.array([c>0][0]).astype(int)
         elif self.hidden_activation_fn == "sigmoid":
-            pass
+            c2 = c * (1-c)
         elif self.hidden_activation_fn == "tanh":
-            pass
+            c2 = 1 - c**2
         
-        grads['W2'] = None
-        grads['b2'] = None
-        grads['W1'] = None
-        grads['b1'] = None
+        d = np.dot(dloss, W2.T)
+        d2 = d * c2
+        
+        grads['W2'] = np.dot(c.T, dloss)
+        grads['b2'] = np.sum(dloss, axis=0)
+        grads['W1'] = np.dot(X.T, d2)
+        grads['b1'] = np.sum(d2, axis=0)
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
