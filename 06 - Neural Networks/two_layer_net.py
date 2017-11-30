@@ -100,10 +100,11 @@ class NeuralNetwork(object):
             elif optimizer == "momentum":
                 if not hasattr(self,'velocity'):
                     self.velocity = {}
-                    self.velocity['W1'] = 0
+                    self.velocity['W1'] = grads['W1']
                     self.velocity['b1'] = 0
-                    self.velocity['W2'] = 0
+                    self.velocity['W2'] = grads['W2']
                     self.velocity['b2'] = 0
+                    self.t = 1
 
                 ############################################################################
                 # Update the weights using Stochastic Gradient descent with Momentum       #
@@ -111,26 +112,48 @@ class NeuralNetwork(object):
                 #   Do not assign the bias correction (div by (1-beta)^t) to self.velocity #
                 #       This correction is just for processing the current iteration       #
                 ############################################################################
-                pass
+                
+                self.velocity['W1'] = beta1 * self.velocity['W1'] + (1-beta1) * learning_rate * grads['W1']
+                self.velocity['b1'] = beta1 * self.velocity['b1'] + (1-beta1) * learning_rate * grads['b1']
+                self.velocity['W2'] = beta1 * self.velocity['W2'] + (1-beta1) * learning_rate * grads['W2']
+                self.velocity['b2'] = beta1 * self.velocity['b2'] + (1-beta1) * learning_rate * grads['b2']
+                
+                self.params['W1'] = self.params['W1'] - learning_rate * self.velocity['W1'] / (1-beta1**self.t)
+                self.params['b1'] = self.params['b1'] - learning_rate * self.velocity['b1']
+                self.params['W2'] = self.params['W2'] - learning_rate * self.velocity['W2'] / (1-beta1**self.t)
+                self.params['b2'] = self.params['b2'] - learning_rate * self.velocity['b2']
+                
                 ############################################################################
                 #                              END OF YOUR CODE                            #
-                ############################################################################  
+                ############################################################################ 
+                
+                self.t += 1
+                
             elif optimizer == "rmsprop":
                 if not hasattr(self,'rmsgrad'):
                     self.rmsgrad = {}
-                    self.rmsgrad['W1'] = 0
+                    self.rmsgrad['W1'] = grads['W1']
                     self.rmsgrad['b1'] = 0
-                    self.rmsgrad['W2'] = 0
+                    self.rmsgrad['W2'] = grads['W2']
                     self.rmsgrad['b2'] = 0
                     self.t = 1
-
 
                 ############################################################################
                 # Update the weights using RMSProp. Apply bias correction.                 #
                 #   Do not assign the bias correction (div by (1-beta)^T) to self.rmsgrad  #
                 #       This correction is just for processing the current iteration       #
                 ############################################################################
-                pass
+                
+                self.rmsgrad['W1'] =  beta2 * self.rmsgrad['W1'] + (1-beta2) * grads['W1'] ** 2
+                self.rmsgrad['b1'] =  beta2 * self.rmsgrad['b1'] + (1-beta2) * grads['b1'] ** 2
+                self.rmsgrad['W2'] =  beta2 * self.rmsgrad['W2'] + (1-beta2) * grads['W2'] ** 2
+                self.rmsgrad['b2'] =  beta2 * self.rmsgrad['b2'] + (1-beta2) * grads['b2'] ** 2
+                
+                self.params['W1'] = self.params['W1'] - learning_rate * (grads['W1'] / np.sqrt(self.rmsgrad['W1'] / (1-beta2**self.t)) + epsilon)
+                self.params['b1'] = self.params['b1'] - learning_rate * (grads['b1'] / np.sqrt(self.rmsgrad['b1'] / (1-beta2**self.t)) + epsilon)
+                self.params['W2'] = self.params['W2'] - learning_rate * (grads['W2'] / np.sqrt(self.rmsgrad['W2'] / (1-beta2**self.t)) + epsilon)
+                self.params['b2'] = self.params['b2'] - learning_rate * (grads['b2'] / np.sqrt(self.rmsgrad['b2'] / (1-beta2**self.t)) + epsilon)
+                
                 ############################################################################
                 #                              END OF YOUR CODE                            #
                 ############################################################################  
@@ -140,16 +163,16 @@ class NeuralNetwork(object):
             elif optimizer == "adam":
                 if not hasattr(self,'rmsgrad'):
                     self.rmsgrad = {}
-                    self.rmsgrad['W1'] = 0
+                    self.rmsgrad['W1'] = self.params['W1']
                     self.rmsgrad['b1'] = 0
-                    self.rmsgrad['W2'] = 0
+                    self.rmsgrad['W2'] = self.params['W2']
                     self.rmsgrad['b2'] = 0
 
                 if not hasattr(self,'velocity'):
                     self.velocity = {}
-                    self.velocity['W1'] = 0
+                    self.velocity['W1'] = self.params['W1']
                     self.velocity['b1'] = 0
-                    self.velocity['W2'] = 0
+                    self.velocity['W2'] = self.params['W2']
                     self.velocity['b2'] = 0
                     self.t = 1
                 
@@ -157,12 +180,28 @@ class NeuralNetwork(object):
                 # Update the weights using RMSProp. Apply bias correction on both       #
                 # velocity and rmsgrad.                                                 #
                 #########################################################################
-                pass
+                
+                self.velocity['W1'] = beta1 * self.velocity['W1'] + (1-beta1) * learning_rate * grads['W1']
+                self.velocity['b1'] = beta1 * self.velocity['b1'] + (1-beta1) * learning_rate * grads['b1']
+                self.velocity['W2'] = beta1 * self.velocity['W2'] + (1-beta1) * learning_rate * grads['W2']
+                self.velocity['b2'] = beta1 * self.velocity['b2'] + (1-beta1) * learning_rate * grads['b2']
+                
+                self.rmsgrad['W1'] =  beta2 * self.rmsgrad['W1'] + (1-beta2) * grads['W1'] ** 2
+                self.rmsgrad['b1'] =  beta2 * self.rmsgrad['b1'] + (1-beta2) * grads['b1'] ** 2
+                self.rmsgrad['W2'] =  beta2 * self.rmsgrad['W2'] + (1-beta2) * grads['W2'] ** 2
+                self.rmsgrad['b2'] =  beta2 * self.rmsgrad['b2'] + (1-beta2) * grads['b2'] ** 2
+                
+                self.params['W1'] = self.params['W1'] - learning_rate * ((self.velocity['W1']/(1-beta1**self.t)) / (np.sqrt(self.rmsgrad['W1'] / (1-beta2**self.t)) + epsilon))
+                self.params['b1'] = self.params['b1'] - learning_rate * ((self.velocity['b1']/(1-beta1**self.t)) / (np.sqrt(self.rmsgrad['b1'] / (1-beta2**self.t)) + epsilon))
+                self.params['W2'] = self.params['W2'] - learning_rate * ((self.velocity['W2']/(1-beta1**self.t)) / (np.sqrt(self.rmsgrad['W2'] / (1-beta2**self.t)) + epsilon))
+                self.params['b2'] = self.params['b2'] - learning_rate * ((self.velocity['b2']/(1-beta1**self.t)) / (np.sqrt(self.rmsgrad['b2'] / (1-beta2**self.t)) + epsilon))
+                
                 #########################################################################
                 #                              END OF YOUR CODE                         #
                 ######################################################################### 
                 
                 self.t += 1
+                
             #########################################################################
             #                             END OF YOUR CODE                          #
             #########################################################################
@@ -349,19 +388,23 @@ class NeuralNetwork(object):
         #############################################################################
         # TODO: Initialize the weight and bias.                                     #
         #############################################################################
+        c = np.dot(X,W1) + b1
         if self.hidden_activation_fn == "relu":
-            pass
+            zero = np.zeros_like(c)
+            c = np.maximum(0,c)
         elif self.hidden_activation_fn == "sigmoid":
-            pass
+            c = self.sigmoid(c)
         elif self.hidden_activation_fn == "tanh":
-            pass
+            c = self.tanh(c)
+
+        scores = np.dot(c,W2) + b2
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
 
-        y_pred = None
+        y_pred = np.argmax(scores, axis=1)
         
-        return y_pred
+        return y_pred, scores
 
 
         
