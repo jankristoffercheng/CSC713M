@@ -100,9 +100,9 @@ class NeuralNetwork(object):
             elif optimizer == "momentum":
                 if not hasattr(self,'velocity'):
                     self.velocity = {}
-                    self.velocity['W1'] = grads['W1']
+                    self.velocity['W1'] = 0
                     self.velocity['b1'] = 0
-                    self.velocity['W2'] = grads['W2']
+                    self.velocity['W2'] = 0
                     self.velocity['b2'] = 0
                     self.t = 1
 
@@ -113,10 +113,10 @@ class NeuralNetwork(object):
                 #       This correction is just for processing the current iteration       #
                 ############################################################################
                 
-                self.velocity['W1'] = beta1 * self.velocity['W1'] + (1-beta1) * learning_rate * grads['W1']
-                self.velocity['b1'] = beta1 * self.velocity['b1'] + (1-beta1) * learning_rate * grads['b1']
-                self.velocity['W2'] = beta1 * self.velocity['W2'] + (1-beta1) * learning_rate * grads['W2']
-                self.velocity['b2'] = beta1 * self.velocity['b2'] + (1-beta1) * learning_rate * grads['b2']
+                self.velocity['W1'] = beta1 * self.velocity['W1'] + (1-beta1) * grads['W1']
+                self.velocity['b1'] = beta1 * self.velocity['b1'] + (1-beta1) * grads['b1']
+                self.velocity['W2'] = beta1 * self.velocity['W2'] + (1-beta1) * grads['W2']
+                self.velocity['b2'] = beta1 * self.velocity['b2'] + (1-beta1) * grads['b2']
                 
                 self.params['W1'] = self.params['W1'] - learning_rate * self.velocity['W1'] / (1-beta1**self.t)
                 self.params['b1'] = self.params['b1'] - learning_rate * self.velocity['b1']
@@ -132,9 +132,9 @@ class NeuralNetwork(object):
             elif optimizer == "rmsprop":
                 if not hasattr(self,'rmsgrad'):
                     self.rmsgrad = {}
-                    self.rmsgrad['W1'] = grads['W1']
+                    self.rmsgrad['W1'] = 0
                     self.rmsgrad['b1'] = 0
-                    self.rmsgrad['W2'] = grads['W2']
+                    self.rmsgrad['W2'] = 0
                     self.rmsgrad['b2'] = 0
                     self.t = 1
 
@@ -163,16 +163,16 @@ class NeuralNetwork(object):
             elif optimizer == "adam":
                 if not hasattr(self,'rmsgrad'):
                     self.rmsgrad = {}
-                    self.rmsgrad['W1'] = self.params['W1']
+                    self.rmsgrad['W1'] = 0
                     self.rmsgrad['b1'] = 0
-                    self.rmsgrad['W2'] = self.params['W2']
+                    self.rmsgrad['W2'] = 0
                     self.rmsgrad['b2'] = 0
 
                 if not hasattr(self,'velocity'):
                     self.velocity = {}
-                    self.velocity['W1'] = self.params['W1']
+                    self.velocity['W1'] = 0
                     self.velocity['b1'] = 0
-                    self.velocity['W2'] = self.params['W2']
+                    self.velocity['W2'] = 0
                     self.velocity['b2'] = 0
                     self.t = 1
                 
@@ -181,10 +181,10 @@ class NeuralNetwork(object):
                 # velocity and rmsgrad.                                                 #
                 #########################################################################
                 
-                self.velocity['W1'] = beta1 * self.velocity['W1'] + (1-beta1) * learning_rate * grads['W1']
-                self.velocity['b1'] = beta1 * self.velocity['b1'] + (1-beta1) * learning_rate * grads['b1']
-                self.velocity['W2'] = beta1 * self.velocity['W2'] + (1-beta1) * learning_rate * grads['W2']
-                self.velocity['b2'] = beta1 * self.velocity['b2'] + (1-beta1) * learning_rate * grads['b2']
+                self.velocity['W1'] = beta1 * self.velocity['W1'] + (1-beta1) * grads['W1']
+                self.velocity['b1'] = beta1 * self.velocity['b1'] + (1-beta1) * grads['b1']
+                self.velocity['W2'] = beta1 * self.velocity['W2'] + (1-beta1) * grads['W2']
+                self.velocity['b2'] = beta1 * self.velocity['b2'] + (1-beta1) * grads['b2']
                 
                 self.rmsgrad['W1'] =  beta2 * self.rmsgrad['W1'] + (1-beta2) * grads['W1'] ** 2
                 self.rmsgrad['b1'] =  beta2 * self.rmsgrad['b1'] + (1-beta2) * grads['b1'] ** 2
