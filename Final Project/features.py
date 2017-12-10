@@ -52,7 +52,7 @@ class TextNegator:
             i = 0
             while i < len(words):
                 word = words[i]
-                if any(word in s for s in NEGATIONS):
+                if any(word.endswith(s) for s in NEGATIONS):
                     i += 1
                     while i < len(words):
                         if any(words[i].endswith(punctuation) for punctuation in PUNCTUATIONS):
@@ -87,10 +87,10 @@ class UnigramFeature:
         self.negations = []
         self.unigrams = None
     
-    def process(self, texts):
+    def process(self, negatedTexts):
         wordDict = {}
         
-        for text in texts:
+        for text in negatedTexts:
             words = text.split()
             for word in words:
                 wordDict[word] = wordDict.get(word, 0) + 1
@@ -99,21 +99,21 @@ class UnigramFeature:
         self.unigrams = {k:v for k,v in wordDict.items() if v >= 4}
         self.unigrams = sorted(self.unigrams, key=self.unigrams.get, reverse=True)
         
-    def get(self, texts, type='pres', top=-1):
+    def get(self, negatedTexts, type='pres'):
         unigrams = self.unigrams
         if top != -1:
             unigrams = self.unigrams[:top]
         features = np.zeros((len(texts), len(unigrams)))
-        for i in range(len(texts)):
+        for i in range(len(negatedTexts)):
             if type == 'freq':
-                counts = Counter(texts[i].split())
+                counts = Counter(negatedTexts[i].split())
                 for k, v in counts.items():
                     try:
                         features[i][unigrams.index(k)] = v
                     except:
                         pass
             if type == 'pres':
-                counts = Counter(texts[i].split())
+                counts = Counter(negatedTexts[i].split())
                 for k, v in counts.items():
                     try:
                         features[i][unigrams.index(k)] = 1
@@ -131,7 +131,7 @@ class UnigramPOSFeature:
             words = negatedTexts[i].split()
             for j in range(len(words)):
                 words[j] += '--' + posOfTexts[i][j]
-            wordDict[words[j]] = wordDict.get(words[j], 0) + 1
+                wordDict[words[j]] = wordDict.get(words[j], 0) + 1
         self.unigrams = {k:v for k,v in wordDict.items() if v >= 4}
         self.unigrams = sorted(self.unigrams, key=self.unigrams.get, reverse=True)
         
@@ -171,7 +171,7 @@ class BigramFeature:
             words = set(words)
             for word in words:
                 try:
-                    features[i][self.unigrams.index(word)] = 1
+                    features[i][self.bigrams.index(word)] = 1
                 except:
                     pass
         return features
@@ -202,12 +202,13 @@ class UnigramPositionFeature:
         self.unigrams = None
         
     def process(self, negatedTexts, positionsOfTexts):
+        count = 0
         wordDict = {}
         for i in range(len(negatedTexts)):
             words = negatedTexts[i].split()
             for j in range(len(words)):
                 words[j] += '--' + str(positionsOfTexts[i][j])
-            wordDict[words[j]] = wordDict.get(words[j], 0) + 1
+                wordDict[words[j]] = wordDict.get(words[j], 0) + 1
         self.unigrams = {k:v for k,v in wordDict.items() if v >= 4}
         self.unigrams = sorted(self.unigrams, key=self.unigrams.get, reverse=True)
     

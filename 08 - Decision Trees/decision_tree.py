@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from regression_tree import RegressionTree
 
 class TreeNode():
     def __init__(self, node_type="Leaf", feature=None, threshold=None,
