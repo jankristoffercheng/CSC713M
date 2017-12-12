@@ -101,9 +101,7 @@ class UnigramFeature:
         
     def get(self, negatedTexts, type='pres'):
         unigrams = self.unigrams
-        if top != -1:
-            unigrams = self.unigrams[:top]
-        features = np.zeros((len(texts), len(unigrams)))
+        features = np.zeros((len(negatedTexts), len(unigrams)))
         for i in range(len(negatedTexts)):
             if type == 'freq':
                 counts = Counter(negatedTexts[i].split())
